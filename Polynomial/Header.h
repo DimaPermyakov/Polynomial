@@ -1,18 +1,20 @@
+// Copyright 2022 Dmitriy <dimapermyakov55@gmail.com>
 #pragma once
 #include <iostream>
 #include <vector>
 #include <cmath>
+
 template <class T>
 class Polynomial {
 public:
     Polynomial();
     Polynomial(const Polynomial<T>& polynom);
-    Polynomial(const std::vector<T>& polynom);
+    explicit Polynomial(const std::vector<T>& vec);
     ~Polynomial();
-    Polynomial(const size_t& size);
+    explicit Polynomial(const size_t& size);
     size_t Size() const;
-    Polynomial<T>& operator+=(const T& polynom);
-    Polynomial<T>& operator+=(const Polynomial<T>& polynom);
+    Polynomial<T>& operator+=(const T& polinom);
+    Polynomial<T>& operator+=(const Polynomial<T>& polinom);
     Polynomial<T>& operator-=(const Polynomial<T>& polynom);
     Polynomial<T>& operator-=(const T& polynom);
     Polynomial<T>& operator*=(const Polynomial<T>& polynom);
@@ -20,7 +22,7 @@ public:
     Polynomial<T>& operator/=(const T& polynom);
     Polynomial<T>& operator%=(const Polynomial<T>& polynom);
     Polynomial<T>& operator*=(const T& polynom);
-    Polynomial<T>& operator=(const Polynomial<T>& polynom);
+    Polynomial<T>& operator=(const Polynomial<T>& polinom);
     T operator[](size_t index) const;
     T& operator[](size_t index);
     void Degree(const size_t& degree);
@@ -28,18 +30,19 @@ public:
     T PutUnknown(const T& x);
     void SendFactor(const size_t& degree, const T& factor);
     T GetFactor(const size_t& degree);
+    void Print() const;
 
 private:
     T* data__;
     size_t size__;
 };
 template <class T>
-Polynomial<T>& Polynomial<T>::operator=(const Polynomial<T>& polynom) {
-    if (this != &polynom) {
+Polynomial<T>& Polynomial<T>::operator=(const Polynomial<T>& polinom) {
+    if (this != &polinom) {
         delete[] data__;
-        data__ = new T[polynom.size__];
-        size__ = polynom.size__;
-        for (size_t i = 0; i < size__; ++i) data__[i] = polynom.data__[i];
+        data__ = new T[polinom.size__];
+        size__ = polinom.size__;
+        for (size_t i = 0; i < size__; ++i) data__[i] = polinom.data__[i];
     }
     return *this;
 }
@@ -64,13 +67,13 @@ Polynomial<T>& Polynomial<T>::operator*=(const T& polynom) {
     return *this;
 }
 template <class T>
-Polynomial<T>& Polynomial<T>::operator+=(const Polynomial<T>& polynom) {
-    *this = *this + polynom;
+Polynomial<T>& Polynomial<T>::operator+=(const Polynomial<T>& polinom) {
+    *this = *this + polinom;
     return *this;
 }
 template <class T>
-Polynomial<T>& Polynomial<T>::operator+=(const T& polynom) {
-    *this = *this + polynom;
+Polynomial<T>& Polynomial<T>::operator+=(const T& polinom) {
+    *this = *this + polinom;
     return *this;
 }
 template <class T>
@@ -104,7 +107,39 @@ Polynomial<T> operator/(const Polynomial<T>& p1, const Polynomial<T>& p2) {
             help[k1] = coef * p2[j];
             ++k1;
         }
-        time -= help;
+        // time -= help;
+        // Subtraction without the displacement
+        size_t max;
+        size_t min;
+        if (time.Size() > help.Size()) {
+            max = time.Size();
+            min = help.Size();
+        }
+        else {
+            max = help.Size();
+            min = time.Size();
+        }
+        Polynomial<T> Polinom(max);
+        size_t index = 0;
+        size_t index_a;
+        size_t index_b;
+        if (time.Size() > help.Size()) {
+            for (; index < max - min; ++index) Polinom[index] = time[index];
+            index_a = index;
+            index_b = 0;
+        }
+        else {
+            for (; index < max - min; ++index) Polinom[index] = help[index];
+            index_a = 0;
+            index_b = index;
+        }
+        for (size_t j = 0; j < min; ++j) {
+            Polinom[index] = time[index_a] - help[index_b];
+            ++index_a;
+            ++index_b;
+            ++index;
+        }
+        time = Polinom;
     }
     return question;
 }
@@ -119,7 +154,7 @@ Polynomial<T> operator%(const Polynomial<T>& p1, const Polynomial<T>& p2) {
         }
     }
     Polynomial<T> remainderNew(size);
-    for (size_t i = 0; i < size; ++i) remainderNew[i] = remainder[i];
+    for (size_t i = 0; i < size-1; ++i) remainderNew[i] = remainder[i];
     return remainderNew;
 }
 template <class T>
@@ -203,13 +238,13 @@ Polynomial<T> operator-(const Polynomial<T>& a, const Polynomial<T>& b) {
     size_t size = Polinom.Size();
     if (Polinom[0] == 0 && size != 1) {
         while (Polinom[0] == 0) {
-            for (size_t j = 0; j < size; ++j) Polinom[j] = Polinom[j + 1];
+            for (size_t j = 0; j < size-1; ++j) Polinom[j] = Polinom[j + 1];
             --size;
         }
     }
-    Polynomial<T> NewPolynom(size);
-    for (size_t j = 0; j < size; ++j) NewPolynom[j] = Polinom[j];
-    return NewPolynom;
+    Polynomial<T> PolinomNew(size);
+    for (size_t j = 0; j < size; ++j) PolinomNew[j] = Polinom[j];
+    return PolinomNew;
 }
 template <class T>
 Polynomial<T> operator-(const Polynomial<T>& a, const T& b) {
@@ -302,4 +337,55 @@ void Polynomial<T>::Degree(const size_t& degree) {
         *this *= help;
         --temp_degre;
     }
+}
+template <class T>
+void Polynomial<T>::Print() const {
+	size_t pow = size__ - 1;
+	if (pow == 0 && data__[0] == 0) {
+		std::cout << "0";
+		return;
+	}
+	for (size_t i = 0; i < size__; ++i) {
+		if (data__[i] == 0) {
+			--pow;
+			continue;
+		}
+		
+		if (pow == 0)
+			std::cout << std::abs(data__[i]);
+		else if (pow == 1) {
+			if (data__[i] == 1)
+				std::cout << "x";
+			else
+				std::cout << std::abs(data__[i]) << "x";
+		}
+
+		else {
+			if (data__[i] == 1)
+				std::cout << "x^" << pow;
+			else
+				std::cout << std::abs(data__[i]) << "x^" << pow;
+		}
+		--pow;
+
+		if (i != size__ - 1) {
+			if (data__[i + 1] == 0 && i + 1 == size__ - 1)
+				break;
+			if (data__[i+1] < 0)
+				std::cout << " - ";
+			else if (data__[i + 1] == 0) {
+				if (data__[i + 2] < 0)
+					std::cout << " - ";
+				else if (data__[i + 2] == 0)
+					continue;
+				else
+					std::cout << " + ";
+
+			}
+				
+			else
+				std::cout << " + ";
+		}
+			
+	}
 }
